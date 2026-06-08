@@ -1,0 +1,168 @@
+:root {
+  --text: #374151;
+  --text-h: #111827;
+  --bg: #ffffff;
+  --border: #d1d5db;
+  --accent: #6366f1;
+  --accent-hover: #4f46e5;
+  --btn-bg: #f3f4f6;
+  --btn-hover: #e5e7eb;
+  --success: #16a34a;
+  --danger: #dc2626;
+  --radius: 8px;
+
+  font: 16px/1.5 system-ui, 'Segoe UI', Roboto, sans-serif;
+  color: var(--text);
+  background: var(--bg);
+  -webkit-font-smoothing: antialiased;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding-top: 24px;
+}
+
+#app {
+  width: 560px;
+  max-width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+/* ── 题目区 ── */
+#topic-area {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 8px;
+}
+
+#topic-text {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--text-h);
+}
+
+#score-text {
+  font-size: 16px;
+  color: var(--accent);
+  font-weight: 500;
+}
+
+/* ── Canvas 绘制区 ── */
+#canvas-wrapper {
+  border: 2px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  line-height: 0;
+}
+
+#drawing-canvas {
+  display: block;
+  cursor: crosshair;
+}
+
+/* ── 工具栏 ── */
+#toolbar {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+button {
+  font: inherit;
+  font-size: 14px;
+  padding: 8px 20px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--btn-bg);
+  color: var(--text-h);
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+button:hover:not(:disabled) {
+  background: var(--btn-hover);
+}
+
+button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* ── 结果区 ── */
+#result-area {
+  width: 100%;
+  text-align: center;
+  min-height: 60px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+#loading-text {
+  color: var(--accent);
+  font-weight: 500;
+  animation: pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+#guess-result {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-h);
+}
+
+#feedback-buttons {
+  display: flex;
+  gap: 12px;
+}
+
+#btn-yes {
+  border-color: var(--success);
+  color: var(--success);
+  background: transparent;
+}
+
+#btn-yes:hover:not(:disabled) {
+  background: #f0fdf4;
+}
+
+#btn-no {
+  border-color: var(--danger);
+  color: var(--danger);
+  background: transparent;
+}
+
+#btn-no:hover:not(:disabled) {
+  background: #fef2f2;
+}
+
+#error-text {
+  color: var(--danger);
+  font-size: 14px;
+}
+
+/* ── 工具类 ── */
+.hidden {
+  display: none !important;
+}
