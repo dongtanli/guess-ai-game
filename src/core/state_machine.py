@@ -85,12 +85,8 @@ class GameSession:
         self._state = GameState.DONE
         return (scored, self._score)
 
-    def next_round(self) -> None:
-        """进入下一轮，状态从 DONE 迁移到 DRAFT，清空本轮数据。"""
-        if self._state != GameState.DONE:
-            raise ValueError(
-                f"next_round 仅允许在 DONE 状态调用，当前状态: {self._state.value}"
-            )
+    def reset(self) -> None:
+        """强制重置到 DRAFT 状态（错误恢复用）。"""
         self._state = GameState.DRAFT
         self._ai_guess = None
         self._current_topic = ""

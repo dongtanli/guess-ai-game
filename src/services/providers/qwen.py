@@ -4,10 +4,10 @@ import base64
 
 import httpx
 
-from src.core.contracts import QWEN_MODEL_NAME, PredictionResult
+from src.core.contracts import AI_TIMEOUT_SECONDS, QWEN_MODEL_NAME, PredictionResult
 
 # 提示词：要求 AI 仅返回物品名称
-_SYSTEM_PROMPT: str = "请用中文猜测这幅简笔画画的是什么，只返回物品名称，不要多余解释。"
+_USER_PROMPT: str = "请用中文猜测这幅简笔画画的是什么，只返回物品名称，不要多余解释。"
 
 
 class QwenProvider:
@@ -26,7 +26,7 @@ class QwenProvider:
         """调用通义千问 VL API 识别图像内容。"""
         request_body = self._build_request(image_bytes)
 
-        async with httpx.AsyncClient(timeout=30.0) as client:
+        async with httpx.AsyncClient(timeout=AI_TIMEOUT_SECONDS) as client:
             response = await client.post(
                 self._api_url + "/chat/completions",
                 json=request_body,
@@ -47,7 +47,7 @@ class QwenProvider:
                 {
                     "role": "user",
                     "content": [
-                        {"type": "text", "text": _SYSTEM_PROMPT},
+                        {"type": "text", "text": _USER_PROMPT},
                         {
                             "type": "image_url",
                             "image_url": {

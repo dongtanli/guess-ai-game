@@ -51,3 +51,10 @@ export async function getScore(): Promise<ScoreResponse> {
   if (!res.ok) throw new Error(await res.text());
   return res.json();
 }
+
+export async function fetchReset(): Promise<{ ok: boolean }> {
+  if (USE_MOCK) return { ok: true };
+  const res = await fetch(`${BASE}/reset`);
+  if (!res.ok) throw new Error(await res.text());
+  return res.json();
+}

@@ -1,6 +1,6 @@
 import { AppState } from './types';
 import type { Tool } from './types';
-import { fetchTopic, submitGuess, sendFeedback } from './api';
+import { fetchTopic, submitGuess, sendFeedback, fetchReset } from './api';
 import { DrawingCanvas } from './canvas';
 import './style.css';
 
@@ -116,6 +116,7 @@ async function handleSubmit(): Promise<void> {
     setState(AppState.RESULT);
   } catch {
     showError('网络错误，请重试');
+    try { await fetchReset(); } catch { /* 重置失败则靠状态屏障兜底 */ }
     setState(AppState.DRAWING);
   }
 }

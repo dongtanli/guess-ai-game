@@ -4,6 +4,7 @@ export class DrawingCanvas {
   private ctx: CanvasRenderingContext2D;
   private drawing = false;
   private canvas: HTMLCanvasElement;
+  private _currentTool: Tool = 'pen';
 
   constructor(canvas: HTMLCanvasElement) {
     this.canvas = canvas;
@@ -20,6 +21,7 @@ export class DrawingCanvas {
   }
 
   setTool(tool: Tool): void {
+    this._currentTool = tool;
     if (tool === 'pen') {
       this.ctx.globalCompositeOperation = 'source-over';
       this.ctx.strokeStyle = '#000000';
@@ -35,6 +37,7 @@ export class DrawingCanvas {
     this.ctx.globalCompositeOperation = 'source-over';
     this.ctx.fillStyle = '#ffffff';
     this.ctx.fillRect(0, 0, 500, 400);
+    this.setTool(this._currentTool);
   }
 
   exportBase64(): string {

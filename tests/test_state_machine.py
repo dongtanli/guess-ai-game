@@ -111,10 +111,10 @@ class TestGameSessionHappyPath:
         assert session.state == GameState.DONE
         assert session.score == 1
 
-        # DONE → DRAFT: next_round
-        session.next_round()
+        # DONE → DRAFT: start_round
+        session.start_round("太阳")
         assert session.state == GameState.DRAFT
-        assert session.current_topic == ""
+        assert session.current_topic == "太阳"
         assert session.ai_guess is None
         assert session.score == 1  # 分数保留
 
@@ -131,7 +131,7 @@ class TestGameSessionHappyPath:
         assert score1 == 1
 
         # 进入下一轮
-        session.next_round()
+        session.start_round("黑题目")
 
         # 第二轮：不得分（用户说错）
         session.start_round("香蕉")
@@ -152,7 +152,6 @@ class TestGameSessionHappyPath:
             scored, score = session.process_feedback(True)
             assert scored is True
             assert score == i + 1
-            session.next_round()
 
         assert session.score == 3
 
@@ -261,29 +260,6 @@ class TestGameSessionStateBarriers:
         with pytest.raises(ValueError, match="process_feedback"):
             session.process_feedback(True)
 
-    # --- next_round 屏障 ---
-
-    def test_next_round_from_draft_raises(self) -> None:
-        session = GameSession()
-        session.start_round("苹果")
-        with pytest.raises(ValueError, match="next_round"):
-            session.next_round()
-
-    def test_next_round_from_guessing_raises(self) -> None:
-        session = GameSession()
-        session.start_round("苹果")
-        session.submit_guess()
-        with pytest.raises(ValueError, match="next_round"):
-            session.next_round()
-
-    def test_next_round_from_result_raises(self) -> None:
-        session = GameSession()
-        session.start_round("苹果")
-        session.submit_guess()
-        session.receive_result("苹果")
-        with pytest.raises(ValueError, match="next_round"):
-            session.next_round()
-
     # --- start_round 屏障 ---
 
     def test_start_round_from_guessing_raises(self) -> None:
@@ -383,14 +359,14 @@ class TestGameSessionProperties:
         session.receive_result("太阳公公")
         assert session.ai_guess == "太阳公公"
 
-    def test_properties_after_next_round(self) -> None:
+    def test_properties_after_start_round_from_done(self) -> None:
         session = GameSession()
         session.start_round("太阳")
         session.submit_guess()
         session.receive_result("太阳")
         session.process_feedback(True)
-        session.next_round()
-        assert session.current_topic == ""
+        session.start_round("月亮")
+        assert session.current_topic == "月亮"
         assert session.ai_guess is None
         assert session.score == 1
 
@@ -414,14 +390,16 @@ class TestEdgeCases:
         # ai_guess 为 None → is_correct_guess("苹果", "") → False → 不得分
         assert scored is False
 
-    def test_repeated_next_round_after_done_to_draft(self) -> None:
-        """next_round 后进入 DRAFT，再次 next_round 应报错。"""
+    def test_start_round_fails_from_result(self) -> None:
+        """DONE后通过 start_round 进入新轮次，再次 process_feedback 应报错。"""
         session = GameSession()
         session.start_round("苹果")
         session.submit_guess()
         session.receive_result("苹果")
         session.process_feedback(True)
-        session.next_round()
+        session.start_round("香蕉")
         assert session.state == GameState.DRAFT
-        with pytest.raises(ValueError, match="next_round"):
-            session.next_round()
+        assert session.current_topic == "香蕉"
+        # 未调用 submit_guess，仍在 DRAFT，process_feedback 应报错
+        with pytest.raises(ValueError, match="process_feedback"):
+            session.process_feedback(True)

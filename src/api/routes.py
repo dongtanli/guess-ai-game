@@ -12,10 +12,10 @@ from src.core.contracts import (
     QWEN_MODEL_NAME,
     GuessRequest,
 )
-from src.core.state_machine import GameSession
+from src.core.state_machine import GameSession, calculate_score, is_correct_guess
 from src.core.word_bank import get_random_topic
 from src.services.ai_predictor import safe_predict
-from src.services.db import insert_round
+from src.services.db import insert_round, list_rounds
 from src.services.providers.qwen import QwenProvider
 
 router: APIRouter = APIRouter()
@@ -45,6 +45,23 @@ class FeedbackResponse(BaseModel):
 
 class ScoreResponse(BaseModel):
     score: int
+
+
+class ResetResponse(BaseModel):
+    ok: bool
+
+
+class HistoryItemResponse(BaseModel):
+    id: int
+    topic: str
+    guess: str
+    is_correct: bool
+    model_name: str
+    created_at: str
+
+
+class HistoryResponse(BaseModel):
+    records: list[HistoryItemResponse]
 
 
 def _validate_and_decode_image(image_b64: str) -> bytes:
@@ -131,13 +148,9 @@ async def post_feedback(
     db_path: str = Depends(get_db_path),
 ) -> FeedbackResponse:
     """用户判断 AI 猜测正误。"""
-    # 1. 状态：RESULT → DONE，计分
-    try:
-        scored, new_score = session.process_feedback(body.user_says_correct)
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e)) from None
-
-    # 2. 持久化回合记录
+    # 1. 持久化回合记录（先写 DB，再改状态：DB 失败时不污染状态机）
+    ai_correct = is_correct_guess(session.current_topic, session.ai_guess or "")
+    scored = calculate_score(body.user_says_correct, ai_correct) == 1
     try:
         await insert_round(
             db_path=db_path,
@@ -149,6 +162,12 @@ async def post_feedback(
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e)) from None
 
+    # 2. 状态：RESULT → DONE，计分
+    try:
+        _scored, new_score = session.process_feedback(body.user_says_correct)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e)) from None
+
     return FeedbackResponse(scored=scored, score=new_score)
 
 
@@ -158,3 +177,32 @@ def get_score(
 ) -> ScoreResponse:
     """返回当前累计得分。"""
     return ScoreResponse(score=session.score)
+
+
+@router.get("/reset", response_model=ResetResponse)
+def post_reset(
+    session: GameSession = Depends(get_session),
+) -> ResetResponse:
+    """错误恢复：强制重置状态机到 DRAFT。"""
+    session.reset()
+    return ResetResponse(ok=True)
+
+
+@router.get("/history", response_model=HistoryResponse)
+async def get_history(
+    db_path: str = Depends(get_db_path),
+) -> HistoryResponse:
+    """返回最近 20 条回合记录。"""
+    rows = await list_rounds(db_path, limit=20)
+    items = [
+        HistoryItemResponse(
+            id=row["id"],  # type: ignore[arg-type]
+            topic=row["topic"],  # type: ignore[arg-type]
+            guess=row["guess"],  # type: ignore[arg-type]
+            is_correct=bool(row["is_correct"]),
+            model_name=row["model_name"],  # type: ignore[arg-type]
+            created_at=row["created_at"],  # type: ignore[arg-type]
+        )
+        for row in rows
+    ]
+    return HistoryResponse(records=items)

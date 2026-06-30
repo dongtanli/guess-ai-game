@@ -1,6 +1,10 @@
 """配置管理（从 .env 读取，Pydantic Settings）。"""
 
+from pathlib import Path
+
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+_PROJECT_ROOT: Path = Path(__file__).resolve().parent.parent.parent
 
 
 class Settings(BaseSettings):
@@ -11,7 +15,7 @@ class Settings(BaseSettings):
     dashscope_api_key: str
     dashscope_api_url: str = "https://dashscope.aliyuncs.com/compatible-mode/v1"
     dashscope_model: str = "qwen3-vl-flash"
-    database_url: str = "guess.db"
+    database_url: str = str(_PROJECT_ROOT / "guess.db")
     log_level: str = "INFO"
 
 
